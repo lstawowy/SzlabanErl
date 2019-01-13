@@ -104,11 +104,11 @@ createHelpMenu(MenuBar) ->
   wxMenu:append(HelpMn, About).
 
 handleAboutMenu() ->
-  io:format("Program na zaliczenie przedmiotu 'Programowanie współbieżne i rozproszone' wykonany przez Lukasza Stawowego. ~n"),
+  io:format("Program na zaliczenie przedmiotu 'Programowanie wspolbiezne i rozproszone' wykonany przez Lukasza Stawowego. ~n"),
   io:format("Dostepne sa funkcje: ~n"),
   io:format(" - barrier up = podniesienie bariery do gory ~n"),
   io:format(" - barrier down = opuszczenie bariery ~n"),
-  io:format(" - random train comming = przyjazd pociagu po 10 sekundach, zablokowanie zasobu do momentu przejazdu pociągu, czyli kolejne 3 sekundy ~n"),
+  io:format(" - random train comming = przyjazd pociagu po 10 sekundach, zablokowanie zasobu do momentu przejazdu pociagu, czyli kolejne 5 sekund ~n"),
   io:format(" - about = wyswietlenie tego opisu ~n"),
   io:format(" - close = wylaczenie okna ~n"),
-  io:format("Dodatkowo program zawiera podstawowa obsługę bledow. ~n").
+  io:format("Dodatkowo program zawiera podstawowa obsluge bledow. ~n").

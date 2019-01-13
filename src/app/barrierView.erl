@@ -163,5 +163,5 @@ managerHandleTrain(ManagerPID, Frame) ->
   receive
     {random_train, ok} ->
       io:format("DEBUG: Manager succesfully comunicated with barrierView. ~n")
-  after (30000) -> throw(timeout)
+  after 30000 -> throw(timeout)
   end.
