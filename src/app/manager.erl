@@ -19,6 +19,8 @@ initManager(WxEnv) ->
 handleBarrierStates(WxEnv) ->
   io:format("DEBUG: Manager PID = <~p> ~n", [self()]),
   wx:set_env(WxEnv),
+  Time_train_come = 10000,
+  Time_train_rest = 1000,
   receive
     {_, new} ->
       ets:new(my_table, [named_table, set]),
@@ -29,31 +31,53 @@ handleBarrierStates(WxEnv) ->
       CurrentState = getBarrierState(),
       SenderID ! {get, CurrentState},
       handleBarrierStates(WxEnv);
+    {SenderID, set, Frame, 'Initial'} ->
+      io:format("Manager received set barrier state request with state: Initial(Up) ~n"),
+      ets:delete_all_objects(my_table),
+      ets:insert(my_table, {state, 'Up'}),
+      barrierView:drawBarrier(Frame, 'Initial'),
+      SenderID ! {set, Frame, ok},
+      handleBarrierStates(WxEnv);
     {SenderID, set, Frame, 'Up'} ->
       io:format("Manager received set barrier state request with state: Up ~n"),
-      ets:delete_all_objects(my_table),
-      ets:insert(my_table, {state, 'RunningUp'}),
-      io:format("Barrier changing state ~n"),
-      barrierView:drawBarrier(Frame, 'RunningUp'),
-      timer:sleep(5000),
-      ets:insert(my_table, {state, 'Up'}),
-      SenderID ! {set, Frame, ok},
-      handleBarrierStates(WxEnv);
+      CurrentState = getBarrierState(),
+      if
+        CurrentState == 'Up' -> io:format("Barrier already in state: Up ~n"),
+          handleBarrierStates(WxEnv);
+        true -> Frame = handleRequest(Frame, 'RunningUp', 'Up'),
+          SenderID ! {set, Frame, ok},
+          handleBarrierStates(WxEnv)
+      end;
     {SenderID, set, Frame, 'Down'} ->
       io:format("Manager received set barrier state request with state: Down ~n"),
-      ets:insert(my_table, {state, 'RunningDown'}),
-      io:format("Barrier changing state ~n"),
-      barrierView:drawBarrier(Frame, 'RunningDown'),
-      timer:sleep(5000),
-      ets:insert(my_table, {state, 'Down'}),
-      SenderID ! {set, Frame, ok},
-      handleBarrierStates(WxEnv);
-    {SenderID, keep, Time} ->
-      io:format("Manager received keep barrier state request ~n"),
-      timer:sleep(Time),
-      SenderID ! {keep, ok},
+      CurrentState = getBarrierState(),
+      if
+        CurrentState == 'Down' -> io:format("Barrier already in state: Down ~n"),
+          handleBarrierStates(WxEnv);
+        true -> Frame = handleRequest(Frame, 'RunningDown', 'Down'),
+          SenderID ! {set, Frame, ok},
+          handleBarrierStates(WxEnv)
+      end;
+    {SenderID, random_train, Frame} ->
+      io:format("Manager received random train request ~n"),
+      Frame = handleRequest(Frame, 'RunningDown', 'Down'),
+      timer:sleep(Time_train_come),
+      barrierView:drawBarrier(Frame, 'TrainComming'),
+      timer:sleep(Time_train_rest),
+      Frame = handleRequest(Frame, 'RunningUp', 'Up'),
+      SenderID ! {random_train, ok},
       handleBarrierStates(WxEnv)
   end.
+
+handleRequest(Frame, RunningState, State) ->
+  ets:delete_all_objects(my_table),
+  ets:insert(my_table, {state, RunningState}),
+  io:format("Barrier changing state ~n"),
+  barrierView:drawBarrier(Frame, RunningState),
+  ets:delete_all_objects(my_table),
+  ets:insert(my_table, {state, State}),
+  barrierView:drawBarrier(Frame, State),
+  Frame.
 
 getBarrierState() ->
   [{_, CurrentState}] = ets:lookup(my_table, state),

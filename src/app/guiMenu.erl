@@ -15,8 +15,7 @@
 -export([initGui/0, handleEvents/2]).
 
 initGui() ->
-  Wx = wx:new(),
-  Frame = wxFrame:new(Wx, ?wxID_ANY, "Szlaban"),
+  Frame = wxFrame:new(wx:new(), 1, "Szlaban", [{size, {800, 600}}]),
 
   initStatusBar(Frame),
   createMenu(Frame),
@@ -28,12 +27,22 @@ initGui() ->
   WxEnv = wx:get_env(),
   ManagerPID = manager:initManager(WxEnv),
   ManagerPID ! {self(), new},
+  initFrameDC(ManagerPID, Frame),
+
   try
     handleEvents(ManagerPID, Frame)
   catch
     throw -> "Thrown exception";
     exit -> "Exit encountered";
     error -> "Error encountered"
+  end.
+
+initFrameDC(ManagerPID, Frame) ->
+  ManagerPID ! {self(), set, Frame, 'Initial'},
+  receive
+    {set, Frame, ok} ->
+      io:format("DEBUG: Initial barrier state set. ~n")
+  after 10000 -> throw(timeout)
   end.
 
 handleEvents(ManagerPID, Frame) ->
